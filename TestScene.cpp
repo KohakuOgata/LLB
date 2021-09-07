@@ -122,21 +122,21 @@ void TestScene::TestUpdate()
 			tree->CreateCollider(*circles.back(), *circles.back()->collider);
 			spawnTimer = SpawnInterval;
 		}*/
-		/*if (Input::GetPushStay(InputID::MouseLeft)) {
+		if (Input::GetPushStay(InputID::MouseLeft)) {
 			GravitalCircle::flameVec = Input::GetMousePos() - mousePosBuf;
 			tree->flame += GravitalCircle::flameVec;
 		}
 		else {
 			GravitalCircle::flameVec = Vec2::Zero;
-		}*/
-		if (Input::GetPushStay(InputID::MouseLeft)) {
+		}
+		/*if (Input::GetPushStay(InputID::MouseLeft)) {
 			Circle2D(Input::GetMousePos(), CollideCircle::RadiusMax).Draw(Color::Get(ColorID::Red), true);
 		}
 		else if(Input::GetPushUp(InputID::MouseLeft)){
 			circles.push_back(new InfectionCircle(Input::GetMousePos(), 100.0, true));
 			tree->CreateCollider(*circles.back(), *circles.back()->collider);
 			*circles.back()->vel *= 10.0;
-		}
+		}*/
 		mousePosBuf = Input::GetMousePos();
 		GravitalCircle::flame = tree->flame;
 		if (Input::GetPushStay(InputID::MouseRight)) {
@@ -208,8 +208,8 @@ void TestScene::TestDraw() const
 		Circle2D(Point2D(100, 100), 50).Draw(b ? Color::Get(ColorID::Red) : Color::Get(ColorID::Black));
 		tree->Draw();
 		printfDx("\n");
-		Input::PrintJoypadAll();
-		Input::PrintJoypadAll(DX_INPUT_PAD2);
+		/*Input::PrintJoypadAll();
+		Input::PrintJoypadAll(DX_INPUT_PAD2);*/
 		printfDx("Total Momentum : %.0lf\n", momentum);
 		printfDx("Gravity : %.0lf\n", GravitalCircle::Gravity.Length());
 		if (flameDraw)

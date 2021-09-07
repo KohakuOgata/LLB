@@ -28,7 +28,7 @@ bool SystemMain::initialize() const
 	SetWindowSizeExtendRate(1.0);								//ウィンドウサイズを変更したい時はここに倍率を指定する
 	const int COLOR_BIT = 32;									//色のbit数。通常32で良いが軽くするなら16にする
 	SetGraphMode(1920, 1080, COLOR_BIT);						//ゲーム画面の解像度
-	SetBackgroundColor(255, 255, 255);							//背景色
+	SetBackgroundColor(30, 30, 30);							//背景色
 	if (DxLib_Init()) {											//DXライブラリ初期化処理
 		return false;											//異常終了したら即座にやめる
 	}

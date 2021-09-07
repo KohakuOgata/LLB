@@ -14,6 +14,7 @@ public:
 	int GetPlayerMaxSpecial() const;
 	int GetRound() const;
 
+	static const double HitStop;
 private:
 	int playerMaxStock;
 	int playerMaxLife;

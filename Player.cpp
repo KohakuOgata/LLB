@@ -29,12 +29,14 @@ const double Player::BallPossessHeight = 135;
 const double Player::BallPossessWidth = ColliderSize.x + 2 * Ball::Radius;
 const double Player::ImmidiatelySwingTime = 24.0 / 60.0;
 const double Player::MaxChargeTime = 20.0 / 60.0;
+const double Player::SmashTime = 18.0 / 60.0;
 const Vec2 Player::UpSwingDegree = Vec2(-Define::Pi / 3.0);
 const Vec2 Player::GroundDownSwingDegree = Vec2(Define::Pi / 6.0);
 const Vec2 Player::AirDownSwingDegree = Vec2(42.0 / 180.0 * Define::Pi);
 const Vec2 Player::ForwardSpikeDegree = Vec2(83.0 / 180.0 * Define::Pi);
 const Vec2 Player::BackweardSpikeDegree = Vec2(97.0 / 180.0 * Define::Pi);
 const double Player::SwingAfterRigor = 8.0 / 60.0;
+const double Player::InvincibleTime = 1.0;
 
 namespace {
 	const int ControllerMask[4] = {
@@ -109,7 +111,8 @@ Player::Player(SceneBase* _pScene) :
 	nonChargeSwingTimer(std::make_unique<Timer>(ImmidiatelySwingTime)),
 	chargeTimer(std::make_unique<Timer>(MaxChargeTime)),
 	swingDirection(Define::EDirection::None),
-	swingAfterRigorTimer(std::make_unique<Timer>(SwingAfterRigor))
+	swingAfterRigorTimer(std::make_unique<Timer>(SwingAfterRigor)),
+	isGettingDamage(false)
 {
 	assert(playerNo >= 0 && playerNo <= 3);
 	StateInit.push_back(&Player::NeutralInit);
@@ -118,7 +121,10 @@ Player::Player(SceneBase* _pScene) :
 	StateInit.push_back(&Player::SwingReadyInit);
 	StateInit.push_back(&Player::SwingChargeInit);
 	StateInit.push_back(&Player::SwingAfterInit);
+	StateInit.push_back(&Player::SmashReadyInit);
+	StateInit.push_back(&Player::SmashInit);
 	StateInit.push_back(&Player::HitStopInit);
+	StateInit.push_back(&Player::DamagedInit);
 
 	StateUpdate.push_back(&Player::NeutralUpdate);
 	StateUpdate.push_back(&Player::CrouchUpdate);
@@ -126,7 +132,10 @@ Player::Player(SceneBase* _pScene) :
 	StateUpdate.push_back(&Player::SwingReadyUpdate);
 	StateUpdate.push_back(&Player::SwingChargeUpdate);
 	StateUpdate.push_back(&Player::SwingAfterUpdate);
+	StateUpdate.push_back(&Player::SmashReadyUpdate);
+	StateUpdate.push_back(&Player::SmashUpdate);
 	StateUpdate.push_back(&Player::HitStopUpdate);
+	StateUpdate.push_back(&Player::DamagedUpdate);
 
 	StateDraw.push_back(&Player::NeutralDraw);
 	StateDraw.push_back(&Player::CrouchDraw);
@@ -134,7 +143,10 @@ Player::Player(SceneBase* _pScene) :
 	StateDraw.push_back(&Player::SwingReadyDraw);
 	StateDraw.push_back(&Player::SwingChargeDraw);
 	StateDraw.push_back(&Player::SwingAfterDraw);
+	StateDraw.push_back(&Player::SmashReadyDraw);
+	StateDraw.push_back(&Player::SmashDraw);
 	StateDraw.push_back(&Player::HitStopDraw);
+	StateDraw.push_back(&Player::DamagedDraw);
 }
 
 Player::~Player()
@@ -161,6 +173,9 @@ void Player::Start()
 
 void Player::Update()
 {
+	if (isGettingDamage) {
+		return;
+	}
 	(this->*StateUpdate.at(state))();
 	PositionUpdate();
 	WallCollideUpdate();
@@ -347,6 +362,11 @@ void Player::DrawImage(const int handle, const Vec2& offset) const
 	DrawRotaGraph(centerX + offset.x - cameraX, centerY + offset.y - cameraY, 1.0, 0.0, handle, true);
 }
 
+void Player::DrawImageRotate(const int handle, const Vec2& angle) const
+{
+	DrawRotaGraph(centerX - cameraX, centerY - cameraY, 1.0, angle.RadAngle(), handle, true);
+}
+
 void Player::ChangeState(const EState newState)
 {
 	(this->*StateInit.at(newState))();
@@ -361,8 +381,10 @@ void Player::NeutralInit()
 void Player::NeutralUpdate()
 {
 	if (GetPushDown(EAction::Swing)) {
-		
-		ChangeState(EState::SwingReady);
+		if (!isOnLand && (GetPushStay(EAction::Left) || GetPushStay(EAction::Right)))
+			ChangeState(EState::SmashReady);
+		else
+			ChangeState(EState::SwingReady);
 		return;
 	}
 	if (GetPushDown(EAction::Down) && isOnLand) {
@@ -609,6 +631,63 @@ void Player::SwingAfterDraw() const
 	DrawImage(imageHandles->swingAfter[isFacingLeft][(int)(ImageHandles::SwingAfterFlame * animationTimer->ProgressRate())]);
 }
 
+void Player::SmashReadyInit()
+{
+	if (GetPushStay(EAction::Left))
+		isFacingLeft = true;
+	else if (GetPushStay(EAction::Right))
+		isFacingLeft = false;
+	isSmashing = true;
+	SetAnimTimer(SmashTime);
+}
+
+void Player::SmashReadyUpdate()
+{
+	velocity->y += Gravity * Time::DeltaTime();
+	if (isOnLand) {
+		velocity->x = 0.0;
+	}
+	else {
+		HorizontalMovement(false);
+	}
+	if (animationTimer->IsFinishing()) {
+		ChangeState(EState::Smash);
+		return;
+	}
+	auto& ball = *GetScene()->FindGameObject<Ball>();
+	if (swingCollider->IsCollided(ball.GetSweepCollider())) {
+		if (ball.Swing(*this, 1.0)) {
+			ChangeState(EState::HitStop);
+			return;
+		}
+	}
+}
+
+void Player::SmashReadyDraw() const
+{
+	DrawImage(imageHandles->smashReady[isFacingLeft][(int)(ImageHandles::SmashReadyFlame * animationTimer->ProgressRate())]);
+}
+
+void Player::SmashInit()
+{
+}
+
+void Player::SmashUpdate()
+{
+	velocity->y += Gravity * Time::DeltaTime();
+	if (isOnLand) {
+		ChangeState(EState::Neutral);
+	}
+	else {
+		HorizontalMovement(false);
+	}
+}
+
+void Player::SmashDraw() const
+{
+	DrawImage(imageHandles->smash[isFacingLeft]);
+}
+
 void Player::HitStopInit()
 {
 	if (GetPushStay(EAction::Up))
@@ -640,7 +719,27 @@ void Player::HitStopUpdate()
 
 void Player::HitStopDraw() const
 {
-	DrawImage(imageHandles->swingAfter[isFacingLeft][0]);
+	DrawImage(isSmashing ? imageHandles->smash[isFacingLeft] : imageHandles->swingAfter[isFacingLeft][0]);
+}
+
+void Player::DamagedInit()
+{
+	velocity->x = -2000;
+	velocity->y = GetScene()->FindGameObject<Ball>()->GetVelocity().x >= 0.0 ? 100.0 : -100.0;
+	collider->Bottom(collider->Top() + ColliderSize.x, true);
+	collider->Right(collider->Left() + ColliderSize.y, true);
+}
+
+void Player::DamagedUpdate()
+{
+	if (isOnLand) {
+		ChangeState(EState::Neutral);
+	}
+}
+
+void Player::DamagedDraw() const
+{
+	DrawImageRotate(imageHandles->stand[isFacingLeft], Vec2(1, 0));
 }
 
 void Player::SetAnimTimer(const double newTime, const bool withoutStart)
@@ -706,6 +805,11 @@ const AABB2D& Player::GetCollider() const
 	return *collider;
 }
 
+int Player::GetLife() const
+{
+	return life;
+}
+
 void Player::OnParried()
 {
 	isParried = true;
@@ -768,7 +872,18 @@ bool Player::IsGettingAnyMoveInput() const
 
 void Player::AddDamage(const int speed)
 {
+	isGettingDamage = true;
 	life -= 0.178 * speed + 23.58;
+}
+
+void Player::EndDamageStop()
+{
+	ChangeState(EState::Damaged);
+}
+
+int Player::GetPlayerNum()
+{
+	return playerNum;
 }
 
 Player::ImageHandles::ImageHandles(const int playerNo)
@@ -804,6 +919,8 @@ Player::ImageHandles::ImageHandles(const int playerNo)
 		LoadDivGraph((filePathStr + "swingReady" + latterStr).c_str(), 3, 3, 1, 372 / 3, 221, swingReady[i]);
 		LoadDivGraph((filePathStr + "swingCharge" + latterStr).c_str(), 2, 2, 1, 332 / 2, 223, swingCharge[i]);
 		LoadDivGraph((filePathStr + "swingAfter" + latterStr).c_str(), 6, 3, 2, 870 / 3, 412 / 2, swingAfter[i]);
+		LoadDivGraph((filePathStr + "smashReady" + latterStr).c_str(), 7, 4, 2, 1192 / 4, 508 / 2, smashReady[i]);
+		smash[i] = LoadGraph((filePathStr + "smash" + latterStr).c_str());
 		LoadDivGraph((filePathStr + "bantBefor" + latterStr).c_str(), 5, 3, 2, 840 / 3, 512 / 2, bantBefor[i]);
 		LoadDivGraph((filePathStr + "bantAfter" + latterStr).c_str(), 4, 2, 2, 618 / 2, 692 / 2, bantAfter[i]);
 	}

@@ -51,6 +51,8 @@ public:
 			SwingReady,
 			SwingCharge,
 			SwingAfter,
+			SmashReady,
+			Smash,
 			HitStop,
 			Damaged,
 			Down,
@@ -72,6 +74,7 @@ public:
 	static double GetBallPossessHeight();
 	int GetPlayerNo() const;
 	const AABB2D& GetCollider() const;
+	int GetLife() const;
 	void OnParried();
 	Define::ETeam GetTeam() const;
 	Define::EDirection GetInputDirection() const;
@@ -79,6 +82,9 @@ public:
 	void OnCompleteBeginSwing();
 	bool IsGettingAnyMoveInput() const;
 	void AddDamage(const int speed);
+	void EndDamageStop();
+
+	static int GetPlayerNum();
 
 private:
 	double GetPushStay(const EAction action) const;
@@ -89,6 +95,7 @@ private:
 	void WallCollideUpdate();
 	void DrawImage(const int handle) const;
 	void DrawImage(const int handle, const Vec2& offset) const;
+	void DrawImageRotate(const int handle, const Vec2& angle) const;
 	void ChangeState(const EState newState);
 	void NeutralInit();
 	void NeutralUpdate();
@@ -108,9 +115,18 @@ private:
 	void SwingAfterInit();
 	void SwingAfterUpdate();
 	void SwingAfterDraw() const;
+	void SmashReadyInit();
+	void SmashReadyUpdate();
+	void SmashReadyDraw() const;
+	void SmashInit();
+	void SmashUpdate();
+	void SmashDraw() const;
 	void HitStopInit();
 	void HitStopUpdate();
 	void HitStopDraw() const;
+	void DamagedInit();
+	void DamagedUpdate();
+	void DamagedDraw() const;
 	void SetAnimTimer(const double newTime, const bool withoutStart = false);
 	void HorizontalMovement(const bool canChangeFacing);
 	
@@ -153,6 +169,7 @@ private:
 	std::unique_ptr<Timer> chargeTimer;
 	Define::EDirection swingDirection;
 	std::unique_ptr<Timer> swingAfterRigorTimer;
+	bool isGettingDamage;
 
 	class ImageHandles {
 	public:
@@ -169,6 +186,7 @@ private:
 		const static int SwingReadyFlame = 3;
 		const static int SwingChargeFlame = 2;
 		const static int SwingAfterFlame = 6;
+		const static int SmashReadyFlame = 7;
 		const static int BantBeforFlame = 5;
 		const static int BantAfterFlame = 4;
 
@@ -188,6 +206,8 @@ private:
 		int swingReady  [2][SwingReadyFlame] = { -1 };
 		int swingCharge [2][SwingChargeFlame] = { -1 };
 		int swingAfter  [2][SwingAfterFlame] = { -1 };
+		int smashReady  [2][SmashReadyFlame] = { -1 };
+		int smash       [2] = { -1 };
 		int bantBefor   [2][BantBeforFlame] = { -1 };
 		int bantAfter   [2][BantAfterFlame] = { -1 };
 	};
@@ -205,11 +225,13 @@ private:
 	const static double AirJumpVelocity;
 	const static double ImmidiatelySwingTime;
 	const static double MaxChargeTime;
+	const static double SmashTime;
 	const static Vec2 UpSwingDegree;
 	const static Vec2 GroundDownSwingDegree;
 	const static Vec2 AirDownSwingDegree;
 	const static Vec2 ForwardSpikeDegree;
 	const static Vec2 BackweardSpikeDegree;
-	const static double SwingAfterRigor;
+	const static double SwingAfterRigor;	//ÉXÉEÉBÉìÉOå„çdíº
+	const static double InvincibleTime;		//ñ≥ìGéûä‘
 };
 

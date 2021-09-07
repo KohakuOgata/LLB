@@ -1,5 +1,7 @@
 #include "GameManager.h"
 
+const double GameManager::HitStop = 1.0;
+
 GameManager::GameManager(SceneBase* _pScene):
 	GameObject(_pScene), round(0)
 {

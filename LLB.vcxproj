@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -47,6 +47,8 @@
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="TitleScene.cpp" />
     <ClCompile Include="UI.cpp" />
+    <ClCompile Include="UIObject.cpp" />
+    <ClCompile Include="UIText.cpp" />
     <ClCompile Include="Utility.cpp" />
     <ClCompile Include="VAxis.cpp" />
     <ClCompile Include="VButton.cpp" />
@@ -85,6 +87,8 @@
     <ClInclude Include="Timer.h" />
     <ClInclude Include="TitleScene.h" />
     <ClInclude Include="UI.h" />
+    <ClInclude Include="UIObject.h" />
+    <ClInclude Include="UIText.h" />
     <ClInclude Include="Utility.h" />
     <ClInclude Include="VAxis.h" />
     <ClInclude Include="VButton.h" />

@@ -9,6 +9,7 @@
 #include "Time.h"
 #include "Utility.h"
 #include "Camera.h"
+#include "GameManager.h"
 
 #include <DxLib.h>
 
@@ -33,7 +34,10 @@ Ball::Ball(SceneBase* _pScene):
 	hitstopTimer(std::make_unique<Timer>(0)),
 	swingedSamePlayerNum(0),
 	lastSwingedPlayer(EPlayer::None),
-	onCompleteBeingSwinged(false)
+	onCompleteBeingSwinged(false),
+	oldPos(std::make_unique<Point2D>(InitialPos)),
+	hitstop(std::make_unique<Timer>(GameManager::HitStop)),
+	damagePlayer(nullptr)
 {
 }
 
@@ -74,6 +78,9 @@ void Ball::Update()
 	case Ball::EState::Swinged:
 		SwingedUpdate();
 		break;
+	case Ball::EState::HitStop:
+		HitStopUpdate();
+		break;
 	default:
 		break;
 	}
@@ -84,6 +91,8 @@ void Ball::Draw()
 
 	const Point2D camPos = GetScene()->FindGameObject<Camera>()->GetFlame().LeftTop();
 	{
+		if (state == EState::Swinged)
+			Cupsule2D(Point2D(*oldPos - camPos), Point2D(collider->p - camPos), Radius).Draw(Color::Get(ColorID::Gray), true);
 		unsigned int outsideColor;
 		switch (color)
 		{
@@ -164,6 +173,11 @@ int Ball::GetSpeed()
 	return speed;
 }
 
+const Vec2& Ball::GetVelocity() const
+{
+	return *vel;
+}
+
 void Ball::ChangeState(const EState nextState)
 {
 	switch (nextState)
@@ -232,7 +246,7 @@ void Ball::SwingedInit(const Player& player, const double chargedRate)
 		swingedSamePlayerNum = 0;
 	swingedSamePlayerNum += 1;
 	if (chargedRate) {
-		speed += (2.34 / (static_cast<double>(swingedSamePlayerNum) + 1.6) + 1.1) * chargedRate;
+		speed = Utility::Lerp((double)speed, speed * (2.34 / (static_cast<double>(swingedSamePlayerNum) + 1.6) + 1.1), chargedRate);
 	}
 	else {
 		speed += 1;
@@ -258,6 +272,7 @@ void Ball::BeingSwingedUpdate()
 
 void Ball::SwingedUpdate()
 {
+	*oldPos = collider->p;
 	const auto& stage = GetScene()->FindGameObject<Stage>()->GetCollider();
 	if (collider->p.x < stage.Left() + Radius) {
 		collider->p.x = stage.Left() + Radius;
@@ -277,7 +292,10 @@ void Ball::SwingedUpdate()
 	}
 	for (auto& player : GetScene()->FindGameObjects<Player>()) {
 		if (color != player->GetTeam() && GetSweepCollider().IsCollided(player->GetCollider())) {
-
+			damagePlayer = player;
+			player->AddDamage(speed);
+			hitstop->Start();
+			state = EState::HitStop;
 		}
 	}
 }
@@ -315,4 +333,12 @@ bool Ball::WallCollide()
 double Ball::GetActualSpeed() const
 {
 	return speed * ActualSpeedFactor;
+}
+
+void Ball::HitStopUpdate()
+{
+	if (hitstop->IsFinishing()) {
+		damagePlayer->EndDamageStop();
+		state = EState::Swinged;
+	}
 }

@@ -11,6 +11,8 @@ class UI :
 public:
 	UI(SceneBase* _scene);
 	~UI();
+	void Update() override {};
+	void Draw() override {};
 
 protected:
 	std::unique_ptr<AABB2D> screen;

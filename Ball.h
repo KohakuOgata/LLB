@@ -9,6 +9,7 @@
 
 class Timer;
 class Player;
+class Vec2;
 
 class Ball :
 	public GameObject
@@ -33,7 +34,8 @@ public:
 		Static,
 		Banted,
 		BeingSwinged,
-		Swinged
+		Swinged,
+		HitStop
 	};
 
 public:
@@ -52,6 +54,7 @@ public:
 	Cupsule2D GetSweepCollider() const;
 	bool IsOnCompleteBeingSwinged() const;
 	int GetSpeed();
+	const Vec2& GetVelocity() const;
 
 private:
 	void ChangeState(const EState nextState);
@@ -65,6 +68,7 @@ private:
 	void StartPossessd(Player* _possessdPlayer);
 	bool WallCollide();
 	double GetActualSpeed() const;
+	void HitStopUpdate();
 
 public:
 	const static double Radius;
@@ -84,6 +88,9 @@ private:
 	int swingedSamePlayerNum;
 	EPlayer lastSwingedPlayer;
 	bool onCompleteBeingSwinged;
+	std::unique_ptr<Point2D> oldPos;
+	std::unique_ptr<Timer> hitstop;
+	Player* damagePlayer;
 
 	const Point2D InitialPos;
 	const static double RespawnAnimTime;
