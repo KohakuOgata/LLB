@@ -83,6 +83,13 @@ public:
 	bool IsGettingAnyMoveInput() const;
 	void AddDamage(const int speed);
 	void EndDamageStop();
+	const AABB2D& GetSwingCollider() const;
+	EState GetState() const;
+	void Hit();
+	bool GetIsAlive() const;
+	int GetStock() const;
+	int GetHit() const;
+	int GetOut() const;
 
 	static int GetPlayerNum();
 
@@ -144,10 +151,12 @@ private:
 	int playerNo;
 	Define::EController controller;
 	Define::ETeam team;
+	int hit;
+	int out;
 	int stock;
 	int life;
 	int special;
-	bool isLive;
+	bool isAlive;
 	bool isFacingLeft;
 	EState state;
 	std::unique_ptr<Vec2> velocity;
@@ -233,5 +242,6 @@ private:
 	const static Vec2 BackweardSpikeDegree;
 	const static double SwingAfterRigor;	//スウィング後硬直
 	const static double InvincibleTime;		//無敵時間
+	const static Vec2 BallPossessPos;
 };
 

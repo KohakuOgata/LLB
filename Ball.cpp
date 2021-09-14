@@ -19,7 +19,7 @@ const double Ball::InitiationMoveSpeed = 1300.0;
 const double Ball::PossessedTime = 2.0;
 const double Ball::Gravity = 380.0 * 2 / Utility::Square(0.64);
 const double Ball::ParriedInitialVel = 380 / 0.64 - 0.64 / 2 * Ball::Gravity;
-const double Ball::ActualSpeedFactor = 135.0;
+const double Ball::ActualSpeedFactor = 100.0;
 const double Ball::HitstopFactor = 0.01;
 
 Ball::Ball(SceneBase* _pScene):
@@ -57,6 +57,7 @@ void Ball::Start()
 
 void Ball::Update()
 {
+	*oldPos = collider->p;
 	collider->p += *vel * Time::DeltaTime();
 
 	switch (state)
@@ -240,7 +241,7 @@ void Ball::BantedUpdate()
 	}
 }
 
-void Ball::SwingedInit(const Player& player, const double chargedRate)
+void Ball::SwingedInit(Player& player, const double chargedRate)
 {
 	if (player.GetPlayerNo() != lastSwingedPlayer)
 		swingedSamePlayerNum = 0;
@@ -251,10 +252,13 @@ void Ball::SwingedInit(const Player& player, const double chargedRate)
 	else {
 		speed += 1;
 	}
+	possessedPlayer = &player;
 	hitstopTimer->SetMaxTime(speed * HitstopFactor);
 	hitstopTimer->Start();
 	*vel *= 0.0;
 	color = player.GetTeam();
+	if (!collider->p.IsCollided(player.GetSwingCollider()))
+		collider->p = player.GetBallPossessPos();
 	state = EState::BeingSwinged;
 }
 
@@ -265,21 +269,20 @@ void Ball::BeingSwingedUpdate()
 		*vel = possessedPlayer->GetBallDegree() * GetActualSpeed();
 		state = EState::Swinged;
 		onCompleteBeingSwinged = true;
-		possessedPlayer = nullptr;
+		//possessedPlayer = nullptr;
 		isPossessed = false;
 	}
 }
 
 void Ball::SwingedUpdate()
 {
-	*oldPos = collider->p;
 	const auto& stage = GetScene()->FindGameObject<Stage>()->GetCollider();
 	if (collider->p.x < stage.Left() + Radius) {
 		collider->p.x = stage.Left() + Radius;
 		vel->x *= -1;
 	}
 	else if (collider->p.x > stage.Right() - Radius) {
-		collider->p.x > stage.Right() - Radius;
+		collider->p.x = stage.Right() - Radius;
 		vel->x *= -1;
 	}
 	if (collider->p.y < stage.Top() + Radius) {
@@ -287,15 +290,15 @@ void Ball::SwingedUpdate()
 		vel->y *= -1;
 	}
 	else if (collider->p.y > stage.Bottom() - Radius) {
-		collider->p.y > stage.Bottom() - Radius;
+		collider->p.y = stage.Bottom() - Radius;
 		vel->y *= -1;
 	}
 	for (auto& player : GetScene()->FindGameObjects<Player>()) {
-		if (color != player->GetTeam() && GetSweepCollider().IsCollided(player->GetCollider())) {
+		if (color != player->GetTeam() && GetSweepCollider().IsCollided(player->GetCollider()) && player->GetState() != Player::EState::Damaged) {
 			damagePlayer = player;
 			player->AddDamage(speed);
-			hitstop->Start();
-			state = EState::HitStop;
+			//hitstop->Start();
+			//state = EState::HitStop;
 		}
 	}
 }
@@ -341,4 +344,14 @@ void Ball::HitStopUpdate()
 		damagePlayer->EndDamageStop();
 		state = EState::Swinged;
 	}
+}
+
+Player& Ball::GetPossessdPlayer() const
+{
+	return *possessedPlayer;
+}
+
+double Ball::GetHitStopProgressRate() const
+{
+	return hitstopTimer->ProgressRate();
 }

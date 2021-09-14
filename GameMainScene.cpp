@@ -49,6 +49,9 @@ void GameMainScene::Update()
 		Parameter parameter;
 		ChangeScene(SceneID::Title, parameter, true);
 	}
+	if (FindGameObject<GameManager>()->GetIsGameSetted()) {
+		GameSet();
+	}
 }
 
 void GameMainScene::Draw() 
@@ -60,6 +63,23 @@ void GameMainScene::Draw()
 void GameMainScene::Init()
 {
 	
+}
+
+void GameMainScene::GameSet()
+{
+	Parameter param;
+	int i = 0;
+	for (const auto& player : FindGameObjects<Player>()) {
+		param.set(std::to_string(i) + std::string("Team"), player->GetTeam());
+		param.set(std::to_string(i) + std::string("Hit"), player->GetHit());
+		param.set(std::to_string(i) + std::string("Out"), player->GetOut());
+		i++;
+	}
+	for (; i < 4; i++) {
+		param.set(std::to_string(i) + std::string("Team"), -1);
+	}
+	param.set("WinTeam", FindGameObject<GameManager>()->GetWinTeam());
+	ChangeScene(SceneID::Result, param, true);
 }
 
 void GameMainScene::DebugDraw()

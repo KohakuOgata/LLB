@@ -14,7 +14,7 @@ void Time::Update()
 
 double Time::DeltaTime()
 {
-	return deltaTime;
+	//return deltaTime;
 	return 1.0 / 60.0;
 }
 

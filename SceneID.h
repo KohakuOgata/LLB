@@ -7,7 +7,6 @@ enum class SceneID {
 	PlayerEntry,
 	GameStart,
 	GameMain,
-	GameOver,
-	GameClear,
+	Result,
 	Edit
 };

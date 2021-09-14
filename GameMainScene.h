@@ -20,6 +20,7 @@ public:
 
 private:
 	void Init();
+	void GameSet();
 	
 private:
 

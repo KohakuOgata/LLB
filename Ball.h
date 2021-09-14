@@ -55,6 +55,8 @@ public:
 	bool IsOnCompleteBeingSwinged() const;
 	int GetSpeed();
 	const Vec2& GetVelocity() const;
+	Player& GetPossessdPlayer() const;
+	double GetHitStopProgressRate() const;
 
 private:
 	void ChangeState(const EState nextState);
@@ -62,7 +64,7 @@ private:
 	void StaticInit();
 	void PossessdUpdate();
 	void BantedUpdate();
-	void SwingedInit(const Player& player, const double chargedTime);
+	void SwingedInit(Player& player, const double chargedTime);
 	void BeingSwingedUpdate();
 	void SwingedUpdate();
 	void StartPossessd(Player* _possessdPlayer);

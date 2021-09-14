@@ -38,6 +38,7 @@ const Vec2 Player::BackweardSpikeDegree = Vec2(97.0 / 180.0 * Define::Pi);
 const double Player::SwingAfterRigor = 8.0 / 60.0;
 const double Player::InvincibleTime = 1.0;
 
+
 namespace {
 	const int ControllerMask[4] = {
 		0x3000,
@@ -88,10 +89,12 @@ namespace {
 Player::Player(SceneBase* _pScene) :
 	GameObject(_pScene),
 	playerNo(playerNum++),
+	hit(0),
+	out(0),
 	stock(GetScene()->FindGameObject<GameManager>()->GetPlayerMaxStock()),
 	life(GetScene()->FindGameObject<GameManager>()->GetPlayerMaxLife()),
 	special(GetScene()->FindGameObject<GameManager>()->GetPlayerMaxSpecial()),
-	isLive(false),
+	isAlive(false),
 	isFacingLeft(false),
 	state(EState::Neutral),
 	velocity(std::make_unique<Vec2>(Vec2::Zero)),
@@ -157,10 +160,10 @@ Player::~Player()
 void Player::Start()
 {
 	//•œŠˆ
-	if (!(!isLive && stock))
+	if (!(!isAlive && stock))
 		return;
 	life = GetScene()->FindGameObject<GameManager>()->GetPlayerMaxLife();
-	isLive = true;
+	isAlive = true;
 	const double StageWidth = Stage::StageSize.x;
 	const int PlayerNum = GetScene()->FindGameObjects<Player>().size();
 	if (PlayerNum <= 2) {
@@ -169,13 +172,16 @@ void Player::Start()
 	else {
 		collider->Center({ StageWidth / 5 * (playerNo + 1), collider->Size().y });
 	}
+	collider->Left(collider->Center().x - ColliderSize.x / 2, true);
+	collider->Right(collider->Center().x + ColliderSize.x / 2, true);
+	collider->Top(collider->Bottom() - ColliderSize.y, true);
+	ChangeState(EState::Neutral);
 }
 
 void Player::Update()
 {
-	if (isGettingDamage) {
+	if (!isAlive)
 		return;
-	}
 	(this->*StateUpdate.at(state))();
 	PositionUpdate();
 	WallCollideUpdate();
@@ -183,6 +189,8 @@ void Player::Update()
 
 void Player::Draw()
 {
+	if (!isAlive)
+		return;
 	centerX = collider->Center().x;
 	centerY = collider->Center().y;
 	const Double2 camPos = GetScene()->FindGameObject<Camera>()->GetFlame().LeftTop();
@@ -344,7 +352,8 @@ void Player::WallCollideUpdate()
 			isFacingLeft = false;
 	}
 	else if (collider->RightBottom().x > Define::StageWidth) {
-		*collider = Point2D(Define::StageWidth - ColliderSize.x, collider->LeftTop().y);
+		//*collider = Point2D(Define::StageWidth - ColliderSize.x, collider->LeftTop().y);
+		collider->Right(Define::StageWidth, false);
 		velocity->x = 0;
 		isOnWall = true;
 		if (!isOnLand)
@@ -621,6 +630,7 @@ void Player::SwingAfterUpdate()
 		return;
 	}
 	if (animationTimer->IsFinishing()) {
+		isSmashing = false;
 		ChangeState(EState::Neutral);
 		return;
 	}
@@ -724,22 +734,29 @@ void Player::HitStopDraw() const
 
 void Player::DamagedInit()
 {
-	velocity->x = -2000;
-	velocity->y = GetScene()->FindGameObject<Ball>()->GetVelocity().x >= 0.0 ? 100.0 : -100.0;
+	velocity->x = (GetScene()->FindGameObject<Ball>()->GetVelocity().x >= 0.0 ? 100.0 : -100.0);
+	velocity->y = -2000;
 	collider->Bottom(collider->Top() + ColliderSize.x, true);
 	collider->Right(collider->Left() + ColliderSize.y, true);
+	isOnLand = false;
 }
 
 void Player::DamagedUpdate()
 {
 	if (isOnLand) {
+		collider->Left(collider->Center().x - ColliderSize.x / 2, true);
+		collider->Right(collider->Center().x + ColliderSize.x / 2, true);
+		collider->Top(collider->Bottom() - ColliderSize.y, true);
 		ChangeState(EState::Neutral);
+	}
+	else {
+		velocity->y += Gravity * Time::DeltaTime();
 	}
 }
 
 void Player::DamagedDraw() const
 {
-	DrawImageRotate(imageHandles->stand[isFacingLeft], Vec2(1, 0));
+	DrawImageRotate(imageHandles->stand[isFacingLeft], Vec2(0.0, 1.0));
 }
 
 void Player::SetAnimTimer(const double newTime, const bool withoutStart)
@@ -872,13 +889,56 @@ bool Player::IsGettingAnyMoveInput() const
 
 void Player::AddDamage(const int speed)
 {
-	isGettingDamage = true;
 	life -= 0.178 * speed + 23.58;
+	if (life <= 0) {
+		isAlive = false;
+		out += 1;
+		stock -= 1;
+		GetScene()->FindGameObject<Ball>()->GetPossessdPlayer().Hit();
+		GetScene()->FindGameObject<GameManager>()->PlayerDied(*this);
+		return;
+	}
+	ChangeState(EState::Damaged);
 }
 
 void Player::EndDamageStop()
 {
 	ChangeState(EState::Damaged);
+}
+
+const AABB2D& Player::GetSwingCollider() const
+{
+	return *swingCollider;
+}
+
+Player::EState Player::GetState() const
+{
+	return state;
+}
+
+void Player::Hit()
+{
+	hit += 1;
+}
+
+bool Player::GetIsAlive() const
+{
+	return isAlive;
+}
+
+int Player::GetStock() const
+{
+	return stock;
+}
+
+int Player::GetHit() const
+{
+	return hit;
+}
+
+int Player::GetOut() const
+{
+	return out;
 }
 
 int Player::GetPlayerNum()

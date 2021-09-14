@@ -24,6 +24,7 @@ void PlayerEntryScene::Update()
 {
 	SceneBase::Update();
 	EntryUpdate();
+	ExitUpdate();
 	if (Input::GetPushDown(InputID::KeyReturn))
 		GoGameMainScene();
 }

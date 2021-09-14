@@ -14,6 +14,7 @@ public:
 	void Draw() override;
 
 	void DrawHealthGuages() const;
+	void DrawHitStopGuage() const;
 private:
 	static const int BallSpeedHeight;
 	int BallSpeedFont;
@@ -24,5 +25,8 @@ private:
 	static const Double2 HealthGuageSize;
 	static const int HealthGuageBorderThickNess;
 	static const int HealthGuageY;
+	static const Double2 HitStopGuageSize;
+	static const int HitStopGuageX;
+	static const int StockRadius;
 };
 

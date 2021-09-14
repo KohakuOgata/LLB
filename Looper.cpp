@@ -7,6 +7,7 @@
 #include "SceneBase.h"
 #include "TitleScene.h"
 #include "GameMainScene.h"
+#include "ResultScene.h"
 #include "TestScene.h"
 #include "PlayerEntryScene.h"
 
@@ -73,6 +74,9 @@ void Looper::OnSceneChanged(const SceneID scene, const Parameter parameter, cons
 		break;
 	case SceneID::GameMain:
 		sceneStack.push(std::make_unique<GameMainScene>(this, parameter));
+		break;
+	case SceneID::Result:
+		sceneStack.push(std::make_unique<ResultScene>(this, parameter));
 		break;
 	case SceneID::Test:
 		sceneStack.push(std::make_unique<TestScene>(this, parameter));

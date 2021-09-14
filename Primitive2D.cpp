@@ -1140,7 +1140,9 @@ void Cupsule2D::Draw(const unsigned int color, const bool fillFlag, const int li
 	Point2D ep = s.PointOnLine();
 	DrawCircle(ep.x, ep.y, r, color, fillFlag, lineThickness);
 	if (fillFlag) {
-		s.Draw(color, r * 2);
+		s.Draw(color, true, r * 2);
+		Circle2D(s.p, r).Draw(color, true, lineThickness);
+		Circle2D(s.PointOnLine(), r).Draw(color, true, lineThickness);
 	}
 	else {
 		s.Draw(color, lineThickness);

@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="GameMainUI.cpp" />
     <ClCompile Include="Liner4TreeMgr.cpp" />
+    <ClCompile Include="ResultScene.cpp" />
     <ClCompile Include="SceneBase.cpp" />
     <ClCompile Include="Ball.cpp" />
     <ClCompile Include="Button.cpp" />
@@ -57,6 +58,7 @@
   <ItemGroup>
     <ClInclude Include="GameMainUI.h" />
     <ClInclude Include="Liner4TreeMgr.h" />
+    <ClInclude Include="ResultScene.h" />
     <ClInclude Include="SceneBase.h" />
     <ClInclude Include="Ball.h" />
     <ClInclude Include="Button.h" />

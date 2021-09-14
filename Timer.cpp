@@ -104,8 +104,13 @@ bool Timer::IsFinishing() const
 
 double Timer::ProgressRate(const bool invert) const
 {
-	if (!invert)
+	if (!invert) {
+		if (maxTime == 0.0)
+			return 0.0;
 		return time / maxTime;
+	}
+	if (maxTime == 0.0)
+		return 1.0;
 	return 1.0 - time / maxTime;
 }
 
